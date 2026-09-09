@@ -1,0 +1,50 @@
+name: Book practice lessons
+
+on:
+  schedule:
+    # Every 10 minutes. GitHub's scheduler is best-effort: runs are often a few
+    # minutes late and can be skipped entirely when the shared queue is busy.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+# A late run must not stack on top of a still-polling one; the newer run takes
+# over and the old browser session is torn down.
+concurrency:
+  group: book-lessons
+  cancel-in-progress: true
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies
+        run: uv sync --frozen
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('uv.lock') }}
+
+      - name: Install Chromium
+        run: uv run playwright install --with-deps chromium
+
+      - name: Poll for slots
+        env:
+          TOPDRIVE_USERNAME: ${{ secrets.TOPDRIVE_USERNAME }}
+          TOPDRIVE_PASSWORD: ${{ secrets.TOPDRIVE_PASSWORD }}
+          # Poll for ~9 min, then exit so the next scheduled run picks up.
+          RUN_DURATION_SECONDS: "540"
+          POLL_MIN_SECONDS: "15"
+          POLL_MAX_SECONDS: "30"
+          MIN_HOURS_AHEAD: "8"
+          HEADLESS: "1"
+        run: uv run python main.py
