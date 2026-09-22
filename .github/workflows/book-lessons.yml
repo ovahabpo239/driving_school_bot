@@ -46,5 +46,6 @@ jobs:
           POLL_MIN_SECONDS: "15"
           POLL_MAX_SECONDS: "30"
           MIN_HOURS_AHEAD: "8"
+          LESSON_TYPE: "any"
           HEADLESS: "1"
         run: uv run python main.py
