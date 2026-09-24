@@ -267,7 +267,9 @@ def main() -> int:
         log("TOPDRIVE_USERNAME and TOPDRIVE_PASSWORD must be set.")
         return 2
 
-    deadline = time.monotonic() + RUN_DURATION_SECONDS
+    # RUN_DURATION_SECONDS <= 0 means "run indefinitely" — for a long-lived
+    # process (e.g. a systemd service) rather than a bounded CI job.
+    deadline = time.monotonic() + RUN_DURATION_SECONDS if RUN_DURATION_SECONDS > 0 else float("inf")
     consecutive_errors = 0
 
     with sync_playwright() as p:

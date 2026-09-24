@@ -7,11 +7,12 @@ on:
     - cron: "*/10 * * * *"
   workflow_dispatch:
 
-# A late run must not stack on top of a still-polling one; the newer run takes
-# over and the old browser session is torn down.
+# Runs are also triggered externally via the workflow_dispatch API every few
+# minutes. Don't cancel a run that's mid-poll: let it finish and keep at most
+# one run queued behind it, so polling is back-to-back with only setup gaps.
 concurrency:
   group: book-lessons
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   poll:
